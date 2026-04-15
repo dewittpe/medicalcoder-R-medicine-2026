@@ -26,8 +26,11 @@
 #
 #   * subject_id:  integer value from MIMIC
 #
-#   * hadmd_id:    hospital admission id, integer value from MIMIC.  Note: these
-#                  IDs are note sequential within a patient record.
+#   * encounter:   a constructed encounter sequence variable.  Using the
+#                  subject_id and admittime, this variable denotes the first,
+#                  second, third, ..., encounter within a subject_id
+#
+#   * age:         age, in years, for the patient for the hadmd_id
 #
 #   * dx:          an integer column of 0s and 1s.  0 = icd_code is a procedure
 #                  code, 1 = icd_code is a diagnosis code
@@ -36,8 +39,6 @@
 #
 #   * icd_version: an integer column with values 9L and 10L indicating if the
 #                  icd_code is an ICD-9 or ICD-10 code.
-#
-#   * age:         age, in years, for the patient for the hadmd_id
 #
 #   * poa:         present-on-admission flag.  This was created to support the
 #                  medicalcoder examples.  Procedure codes have a chartdate and
@@ -49,10 +50,6 @@
 #   * pdx:         integer column: 1 = diagnosis code is the primary diagnosis,
 #                  0 = diagnosis code is a secondary diagnosis for the
 #                  encounter
-#
-#   * enc_seq      a constructed encounter sequence variable.  Using the
-#                  subject_id and admittime, this variable denotes the first,
-#                  second, third, ..., encounter within a subject_id
 #
 ################################################################################
 set.seed(960122) # GoAvsGo
@@ -160,7 +157,7 @@ data.table::setkey(mimicivDT, subject_id, admittime, hadm_id)
 # overhead and computational expense when sorting and joining by POSIXct
 # variable.  The enc_seq achieves the same utility with lower computational
 # overhead.
-mimicivDT[, enc_seq := cumsum(!duplicated(hadm_id)), by = .(subject_id)]
+mimicivDT[, encounter := cumsum(!duplicated(hadm_id)), by = .(subject_id)]
 
 # omit columns not needed for examples
 mimicivDT[, anchor_age := NULL]
@@ -168,9 +165,17 @@ mimicivDT[, anchor_year := NULL]
 mimicivDT[, chartdate := NULL]
 mimicivDT[, seq_num := NULL]
 mimicivDT[, admittime := NULL]
+mimicivDT[, hadm_id := NULL]
 
 ################################################################################
 # Save to disk
+data.table::setcolorder(
+  x = mimicivDT,
+  neworder = c("subject_id", "encounter", "age", "icd_code", "icd_version", "dx", "poa", "pdx")
+)
+
+data.table::setkey(mimicivDT, subject_id, encounter)
+
 arrow::write_feather(x = mimicivDT, sink = "mimiciv.feather")
 
 ################################################################################

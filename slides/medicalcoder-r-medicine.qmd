@@ -25,7 +25,6 @@ knitr:
     message: true  # show messages
     warning: true  # show warnings
     error: true    # show error messages
-    comment: ""    # don't show ## with printed output
     R.options:   
       digits: 3    # round to three digits
 editor_options:
@@ -34,11 +33,14 @@ editor: source
 highlight-style: rstudio_default-light.theme
 ---
 
-```r
+```{r}
 #| label: setup
 #| inlclude: false
 # load data
+options("datatable.print.topn" = 3)
+
 mimiciv <- arrow::read_feather("../mimiciv.feather")
+data.table::setDT(mimiciv)
 ```
  
 # Introduction
@@ -125,10 +127,25 @@ knitr::include_graphics(
 * https://physionet.org/content/mimiciv/3.1/
 
 
-##
+## Example Data: MIMIC-IV v3.1
 
 ```{r}
 #| label: mimiciv-data
 #| echo: true
 mimiciv
 ```
+
+::: {style="font-size: 0.7em;"}
+
+| Column         | Description                                        | Source                | 
+| :--            | :------                                            | :--                   | 
+| `subject_id`   | subject identifier                                 | MIMIC-IV              | 
+| `encounter`    | Encounter Secquence within `subject_id`            | constructed           | 
+| `age`          | Age, in years, at admission                        | MIMIC-IV; constructed | 
+| `icd_code`     | ICD code                                           | MIMIC-IV              | 
+| `icd_version ` | ICD version integer value 9 or 10                  | MIMIC-IV              | 
+| `dx`           | Indicator for diagnostic (1) or procedure (0) code | MIMIC-IV; constructed | 
+| `poa`          | Present-on-admission flag                          | constructed           | 
+| `pdx`          | Primary diagnosis flag                             | constructed           | 
+
+:::
