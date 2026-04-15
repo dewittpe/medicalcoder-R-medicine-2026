@@ -1,0 +1,113 @@
+---
+title: "medicalcoder:"
+subtitle: "A Unified and Longitudinally Aware Framework for ICD-Based Comorbidity Assessment in R"
+author:
+  - name: "Peter E. DeWitt, Ph.D."
+    affiliation:
+      - "University of Colorado Anschutz, <br>Department of Biomedical Informatics"
+date: "May 8, 2026"
+data-format: "MMMM D, YYYY"
+format:
+  revealjs:
+    theme: 
+      - default
+      - slides.scss
+    fontsize: 2em
+    html-math-method: mathjax
+    slide-number: c
+    show-slide-number: all
+    highlight-style: rstudio_default-light.theme
+embed-resources: true   # true = a single file, false = multiple files
+knitr:
+  opts_chunk:      ########## set global options ############
+    collapse: true # keep code from blocks together (if shown)
+    echo: false    # don't show code
+    message: true  # show messages
+    warning: true  # show warnings
+    error: true    # show error messages
+    comment: ""    # don't show ## with printed output
+    R.options:   
+      digits: 3    # round to three digits
+editor_options:
+  chunk_output_type: console
+editor: source
+highlight-style: rstudio_default-light.theme
+---
+ 
+# Introduction
+
+## Comorbidity algorithms based on International Classification of Diseases (ICD)
+
+* Used for:
+  * Risk adjustment, and
+  * Cohort characterization.
+
+* Existing implementations
+  * fragment across packages,
+  * inconsistently handle mixed ICD-9 and ICD-10 data
+  * encounter-level logic only
+
+## Longitudinal Awareness
+
+* Existing implementations are encounter-level: 
+
+  __This ignores the longitudinal nature of medical records!__
+
+* Encounter-level flagging is sufficient if:
+
+  * _all_ ICD codes from prior encounters are present in the current encounter
+    record, and
+  * primary diagnosis flags are correct
+  * present-on-admission flags are correct
+
+* Simple carry-forward of encounter-level flagging within a patient record is
+  insufficient
+  * Disease severity can be missed
+  * Some conditions will be missed entirely
+
+## We present the R package __medicalcoder__
+
+:::: {.columns}
+
+::: {.column width="65%"}
+
+* Comorbidity Flagging Options:
+  * Encounter-level
+  * __Longitudinally aware__
+
+* Accommodates:
+  * Present-on-admission flags
+  * Primary diagnosis flags
+  * Mixed ICD versions
+  * Mixed full and compact ICD code formats
+
+* multiple variants of 
+  * Charlson, 
+  * Elixhauser, and 
+  * Pediatric Complex Chronic Conditions (PCCC)
+
+:::
+
+::: {.column width="35%"}
+
+![](hex.svg){}
+
+:::
+
+::::
+
+# Examples
+
+## Example Data: MIMIC-IV v3.1
+
+* De-identified health data from patients admitted to intensive care
+  units at Beth Israel Deaconess Medical Center.
+
+* ICD-9 and ICD-10 diagnostic and procedure codes available for comorbidity
+  research.
+
+* MIMIC-IV is widely used for method development, validation, and reproducible
+  research in clinical informatics and outcomes research.
+
+* https://physionet.org/content/mimiciv/3.1/
+
