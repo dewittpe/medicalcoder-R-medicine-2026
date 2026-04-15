@@ -33,6 +33,13 @@ editor_options:
 editor: source
 highlight-style: rstudio_default-light.theme
 ---
+
+```r
+#| label: setup
+#| inlclude: false
+# load data
+mimiciv <- arrow::read_feather("../mimiciv.feather")
+```
  
 # Introduction
 
@@ -90,7 +97,13 @@ highlight-style: rstudio_default-light.theme
 
 ::: {.column width="35%"}
 
-![](hex.svg){}
+```{r}
+#| label: hexlogo
+#| echo: false
+knitr::include_graphics(
+  system.file("help", "figures", "hex.svg", package = "medicalcoder")
+)
+```
 
 :::
 
@@ -111,3 +124,11 @@ highlight-style: rstudio_default-light.theme
 
 * https://physionet.org/content/mimiciv/3.1/
 
+
+##
+
+```{r}
+#| label: mimiciv-data
+#| echo: true
+mimiciv
+```

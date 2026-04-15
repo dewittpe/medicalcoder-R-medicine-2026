@@ -12,7 +12,7 @@ all: slides/medicalcoder-r-medicine.html
 		-e "if (length(missing)) { message('Installing missing R packages: ', paste(missing, collapse = ', ')); install.packages(missing, repos = 'https://cloud.r-project.org'); }"
 	@touch $@
 
-slides/medicalcoder-r-medicine.html: slides/medicalcoder-r-medicine.qmd slides/hex.svg slides/slides.scss slides/rstudio_default-light.theme mimiciv.feather
+slides/medicalcoder-r-medicine.html: slides/medicalcoder-r-medicine.qmd slides/slides.scss slides/rstudio_default-light.theme mimiciv.feather
 	$(QUARTO) render $<
 
 mimiciv.feather: mimiciv-data-prep.R .deps
