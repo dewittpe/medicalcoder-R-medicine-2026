@@ -4,4 +4,5 @@ Presentation materials for [R/Medicine 2026](https://rconsortium.github.io/RMedi
 
 **Accepted for a Regular Talk**
 
-20 minutes (including Q&A)
+* May 8, 2026 at 2:06 PM Eastern Daylight Time
+* 20 minutes (including Q&A)
