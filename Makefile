@@ -22,3 +22,4 @@ clean:
 	$(RM) .deps
 	$(RM) .mimiciv.feather
 	$(RM) slides/medicalcoder-r-medicine.html
+	$(RM) -r slides/medicalcoder-r-medicine_cache/
