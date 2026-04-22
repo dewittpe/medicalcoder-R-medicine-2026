@@ -54,9 +54,12 @@ data.table::setDT(mimiciv)
 * Worked with ICD-9 and ICD-10 data?
 * Assessed Charlson or Elixhauser comorbidities?
 * Assessed Pediatric Complex Chronic Conditions (PCCC)?
-* Been concerned about Present-on-admission flags?
-* Primary vs secondary diagnosis?
+* Been concerned about present-on-admission flags?
+* Primary verse secondary diagnosis?
 * Needed a __longitudinal__ patient context?
+
+::: {.notes}
+:::
 
 ## If you answered yes to any of those questions...
 
@@ -71,20 +74,9 @@ _medicalcoder_ provides needed utilities to support your work
     * Three families: Charlson, Elixhauser, and PCCC
     * Multiple variants of each
 
-## Example Data: MIMIC-IV v3.1
-
-* De-identified health data from patients admitted to intensive care
-  units at Beth Israel Deaconess Medical Center.
-
-* ICD-9 and ICD-10 diagnostic and procedure codes available for comorbidity
-  research.
-
-<!--
-* MIMIC-IV is widely used for method development, validation, and reproducible
-  research in clinical informatics and outcomes research.
--->
-
-* https://physionet.org/content/mimiciv/3.1/
+::: {.notes}
+* medicalcoder has a full internal ICD database
+:::
 
 ## Example Data: MIMIC-IV v3.1
 
@@ -110,7 +102,30 @@ mimiciv
 
 :::
 
+
+::: {style="font-size: 0.5em;"}
+
+---
+
+Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
+
+:::
+
+::: {.notes}
+* De-identified health data from patients admitted to intensive care
+  units at Beth Israel Deaconess Medical Center.
+
+* ICD-9 and ICD-10 diagnostic and procedure codes available for comorbidity
+  research.
+
+* Some of the columns I created
+
+* You can review the specific code for this work on github, link on the final
+  slide
+:::
+
 ## Example Data: MIMIC-IV v3.1
+
 ```{r}
 #| label: mixed-icd-in-mimiciv
 #| echo: false
@@ -487,9 +502,14 @@ ahrq2026delta <-
 * [Agency for Healthcare Research and Quality](https://www.ahrq.gov/) (AHRQ)
 * Present-on-admission is _required_ for _some_ conditions/ICD codes
 * Example:
-  * ICD-10 diagnosis code K76.0: Fatty (change of) liver, not elsewhere classified
+  * K76.0: Fatty (change of) liver, not elsewhere classified
   * Maps to mild liver disease
   * Must be present-on-admission to flag the comorbidity
+
+::: {.notes}
+That is, if K76.0 occurs during encounter 1, the patient does not get flagged as
+having mild liver disease as the condition could arise during acute care.
+:::
 
 ## Subject 19997538:
 * 3 encounters
@@ -703,12 +723,41 @@ DT1 |>
 * Carry-forward of an encounter-level flag is insufficient for flagging
   comorbidities in longitudinal data
 
-## `medicalcoder::comorbidities()`
+## `medicalcoder::comorbidities()` {auto-animate=true}
 
-```{r}
-#| label: comorbidities-api
-#| echo: true
-#| eval: false
+```r
+medicalcoder::comorbidities(
+  ### Required inputs:
+  data      = ,   # object inheriting data.frame; one ICD code per row
+  icd.codes = ,   # character; name of column in data containing ICD codes
+  method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
+```
+
+## `medicalcoder::comorbidities()` {auto-animate=true}
+
+```r
+medicalcoder::comorbidities(
+  ### Required inputs:
+  data      = ,   # object inheriting data.frame; one ICD code per row
+  icd.codes = ,   # character; name of column in data containing ICD codes
+  method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
+
+  ### Optional inputs controlling grouping and code attributes:
+  id.vars   = NULL,  # character; subject, encounter identifiers
+  icdv.var  = NULL,  # character; column name for ICD version (9 or 10)
+  icdv      = NULL,  # integer; constant ICD version for all rows
+  dx.var    = NULL,  # character; column name indicating  diagnosis (1) or procedure (0)
+  dx        = NULL,  # integer; constant dx indicator for all rows
+  poa.var   = NULL,  # character; column name for present-on-admission indicator
+  poa       = NULL,  # integer; constant POA indicator for all rows
+  age.var   = NULL,  # character; column name for age in years (Charlson only)
+  primarydx.var = NULL, # character; column name indicating primary diagnosis
+  primarydx     = NULL, # integer; constant primary dx indicator
+```
+
+## `medicalcoder::comorbidities()` {auto-animate=true}
+
+```r
 medicalcoder::comorbidities(
   ### Required inputs:
   data      = ,   # object inheriting data.frame; one ICD code per row
