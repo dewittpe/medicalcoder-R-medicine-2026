@@ -60,21 +60,16 @@ data.table::setDT(mimiciv)
 
 ## If you answered yes to any of those questions...
 
-_medicalcoder_ provides needed utilities to support your work <img src="hex.svg" width="400px" align="right"/>
+_medicalcoder_ provides needed utilities to support your work
 
-* Comprehensive internal ICD data base
-  * ICD-9 and ICD-10 from 1997 through 2026
-  * Diagnostic and Procedure Codes
-  * Sourced from CDC, CMS, and WHO
-
-* Comorbidity Algorithms
-  * Three families:
-    * Charlson
-    * Elixhauser
-    * PCCC
-  * Multiple variants of each
-
-# Examples
+* Designed for real-world EHR data
+  * mixed ICD-9 and ICD-10
+  * full and compact code formats
+  * present-on-admission and primary diagnosis indicators
+  * longitudinal patient context
+  * Comorbidity Algorithms
+    * Three families: Charlson, Elixhauser, and PCCC
+    * Multiple variants of each
 
 ## Example Data: MIMIC-IV v3.1
 
@@ -327,6 +322,7 @@ Quan, Hude, et al. "Coding algorithms for defining comorbidities in ICD-9-CM and
 
 :::
 
+<!--
 ## Conditions
 
 ```{r}
@@ -362,6 +358,7 @@ ggplot2::ggplot(cdelta_long) +
     legend.position = "bottom"
   )
 ```
+-->
 
 ## Diabetes
 
@@ -386,10 +383,6 @@ g1 <-
     name = "Number of Encounters",
     label = scales::label_comma()
   ) +
-  #ggplot2::scale_color_manual(
-  #  name = "",
-  #  values = c("#A2AAAD", "#000000")
-  #) +
   ggplot2::scale_fill_manual(
     name = "Flag Method",
     values = c("Encounter-level" = "#6F263D", "Longitudinal" = "#4F8FCB")
@@ -415,14 +408,10 @@ s10009326 <- s10009326[value == 1]
 
 g2 <-
   ggplot2::ggplot(s10009326) +
-  ggplot2::aes(x = encounter, y = flag.method, fill = flag.method) + #, color = variable) +
+  ggplot2::aes(x = encounter, y = flag.method, fill = flag.method) +
   ggplot2::geom_tile(color = "white") +
   ggplot2::scale_x_continuous(breaks = seq(1, max(s10009326$encounter), by=1)) +
   ggh4x::facet_nested(method + variable ~ ., scales = "free_y")  +
-  #ggplot2::scale_color_manual(
-  #  name = "",
-  #  values = c("#A2AAAD", "#000000")
-  #) +
   ggplot2::scale_fill_manual(
     name = "Flag Method",
     values = c("Encounter-level" = "#6F263D", "Longitudinal" = "#4F8FCB")
@@ -441,8 +430,6 @@ g2 <-
 ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
 ```
 
-
-# Example:<br>Elixhauser per AHRQ
 
 ```{r}
 #| label: ahrq2026current
@@ -559,8 +546,6 @@ gt::gt()
 ```
 
 * Simple encounter level carry-forward will fail to flag the mild liver disease
-
-# Example:<br>Pediatric Complex Chronic Conditions
 
 ## PCCC v3 (Feinstein 2024)
 
@@ -718,9 +703,6 @@ DT1 |>
 * Carry-forward of an encounter-level flag is insufficient for flagging
   comorbidities in longitudinal data
 
-
-# Okay, How did you get those results?
-
 ## `medicalcoder::comorbidities()`
 
 ```{r}
@@ -753,6 +735,7 @@ medicalcoder::comorbidities(
 )
 ```
 
+<!--
 ## Example calls
 
 ```{r}
@@ -766,8 +749,7 @@ medicalcoder::comorbidities(
 #| eval: false
 #| echo: true
 ```
-
-
+-->
 
 <!--
   Omit optionally showing all the calls, this might be useful for a live version
@@ -840,41 +822,16 @@ medicalcoder::comorbidities(
 
 -->
 
-# Why should we trust medicalcoder?
+## Trusting the Results
 
-## Testing
-
-* _medicalcoder_ results are equivalent to [MIMIC-IV Code](https://github.com/MIT-LCP/mimic-code)
-* Identical results to SAS code published by AHRQ
-* _medicalcoder_ vs other R packages
-  * all observed differences have been false negatives from the other packages.
-* It's not a black box
-  * All source materials and code are open for review:
-  * https://github.com/dewittpe/medicalcoder/
-
-<!--
-# I bet it takes a long time<br>to compute all that<br>longitudinal stuff.
-
-## For the MIMIC-IV v3.1 data
-
-![](figure3.svg)
--->
-
-<!--
-* comorbidity R package
-  * data in long format
-  * two calls, one for ICD-9, one for ICD-10, aggregate results
-
-* pccc R package
-  * data in wide format
-  * one call for ICD-9, one call for ICD-10, aggregate results
-
-* MIMIC-IV SQL
-  * data in long format
-  * SQL code requires some modification
--->
-
-# What do I need to use medicalcoder?
+* Testing
+  * _medicalcoder_ results are equivalent to [MIMIC-IV Code](https://github.com/MIT-LCP/mimic-code)
+  * Identical results to SAS code published by AHRQ
+  * _medicalcoder_ vs other R packages
+    * all observed differences have been false negatives from the other packages.
+  * It's not a black box
+    * All source materials and code are open for review:
+    * https://github.com/dewittpe/medicalcoder/
 
 ## Depends on R &geq; 3.5.0, No Imports
 
@@ -882,42 +839,12 @@ medicalcoder::comorbidities(
 #| label: medicalcoder-packageDescription
 #| echo: true
 #| output: true
-installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")] 
+installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 ```
 
 * `data.table` and `dplyr` are suggested for performance
 
 * All you need is a `medicalcoder_<version>.tar.gz` file and R &geq; 3.5.0
-
-<!--
-* Yes, one 2.7 MB tar ball
-  * Comprehensive ICD database for 1997 - 2026 from CDC, CMS, WHO
-  * 17 comorbidity algorithms
-  * Two example datasets
-
-* Testing:
-  * All versions of R &geq; 3.5.0 without suggested packages
-  * All versions of R &geq; 4.1.0 with suggested packages
-  * https://github.com/dewittpe/medicalcoder/tree/main/testing
--->
-
-<!--
-# What else can _medicalcoder_ do?
-
-## _medicalcoder_ utilities
-
-* Comorbidity Mappings
-  * Primary function: `comorbidities()`
-  * `get_charlson_codes()`; `get_charlson_index_scores()`
-  * `get_elixhauser_codes()`; `get_elixhauser_index_scores()`; `get_elixhauser_poa()`
-  * `get_pccc_codes()`; `get_pccc_conditions()`
-
-* ICD Tools
-  * `get_icd_codes()`
-  * `lookup_icd_codes()`
-  * `is_icd()`
-  * `icd_compact_to_full()`
--->
 
 ## Takeaway
 
@@ -933,7 +860,7 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
   comorbidities in longitudinal data
 
 * medicalcoder provides a light-weight, unified API allowing end users to
-  quickly a comorbidity algorithm to a data set while accounting for
+  quickly apply a comorbidity algorithm to a data set while accounting for
   present-on-admission status, primary diagnosis, ICD-version, ICD-type, full-
   and compact-code formats, and accounting for the longitudinal nature of
   medical data.
@@ -958,8 +885,8 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 :::
 ::::
 
-| | |
-|:-- |:----- |
+|                 |       |
+|:--              |:----- |
 | CRAN            | [https://cran.r-project.org/package=medicalcoder](https://cran.r-project.org/package=medicalcoder) |
 | GitHub          | [https://github.com/dewittpe/medicalcoder](https://github.com/dewittpe/medicalcoder) |
 | Package Website | [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/) |
