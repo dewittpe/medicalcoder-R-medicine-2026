@@ -7,7 +7,7 @@ QUARTO := quarto
 all: slides/medicalcoder-r-medicine.html
 
 .deps:
-	$(RSCRIPTVANILLA) -e "pkgs <- c('data.table', 'arrow', 'medicalcoder')"\
+	$(RSCRIPTVANILLA) -e "pkgs <- c('data.table', 'arrow', 'medicalcoder', 'ggh4x', 'ggpubr', 'gt')"\
 		-e "missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]"\
 		-e "if (length(missing)) { message('Installing missing R packages: ', paste(missing, collapse = ', ')); install.packages(missing, repos = 'https://cloud.r-project.org'); }"
 	@touch $@
