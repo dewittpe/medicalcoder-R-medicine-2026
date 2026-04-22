@@ -2,9 +2,13 @@
 title: "<img src='hex.svg' width='200px'/><br>medicalcoder:"
 subtitle: "A Unified and Longitudinally Aware Framework<br>for ICD-Based Comorbidity Assessment in R"
 author:
-  - name: "Peter E. DeWitt, Ph.D."
+  - name: Peter E. DeWitt, PhD^1^; Seth Russell, MS^1^; James A. Feinstein, MD, MPH^2,3,4^; Margaret N. Rebull, MA^1^; Tellen D. Bennett, MD, MS^1,5^
     affiliation:
-      - "University of Colorado Anschutz, <br>Department of Biomedical Informatics"
+      - <small> ^1^ Department of Biomedical Informatics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA<br>
+        ^2^ Adult and Child Center for Outcomes Research and Delivery Science, University of Colorado Anschutz Medical Campus, Aurora.<br>
+        ^3^ Children's Hospital Colorado, Aurora.<br>
+        ^4^ Department of Pediatrics, University of Colorado Anschutz Medical Campus, Aurora.<br>
+        ^5^ Section of Critical Care Medicine, Department of Pediatrics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA </small>
 date: "May 8, 2026"
 data-format: "MMMM D, YYYY"
 format:
@@ -47,39 +51,14 @@ data.table::setDT(mimiciv)
 
 ## Have you ever...
 
-* Dealt with ICD codes?
-  * ICD-9, ICD-10, both?
-  * Diagnosis, Procedural, both?
-  * Full codes: _e.g._ C4A.111
-  * Compact codes: _e.g._ C4A111
-
-## Have you ever...
-
-* Worked with Charlson Comorbidities?
-  * Deyo (1992)
-  * Quan (2005, 2011)
-  * CDMF (2019)
-
-* Worked with Elixhauser Comorbidities?
-  * Elixhauser (1988)
-  * Quan (2005)
-  * AHRQ web (ICD-9 based)
-  * AHRQ 2022-2006 (ICD-10 based)
-
-* Pediatric Complex Chronic Conditions (PCCC)
-  * v2 (Feudtner et al., 2014)
-  * v3 (Feinstein et al., 2024)
-
-## Have you ever...
-
-Been concerned about
-
-* age?
-* Present-on-admission flags?
+* Worked with ICD-9 and ICD-10 data?
+* Assessed Charlson or Elixhauser comorbidities?
+* Assessed Pediatric Complex Chronic Conditions (PCCC)?
+* Been concerned about Present-on-admission flags?
 * Primary vs secondary diagnosis?
-* _longitudinal_ flagging over a patient history?
+* Needed a __longitudinal__ patient context?
 
-## If you answered yes to any of the questions
+## If you answered yes to any of those questions...
 
 _medicalcoder_ provides needed utilities to support your work <img src="hex.svg" width="400px" align="right"/>
 
@@ -105,11 +84,12 @@ _medicalcoder_ provides needed utilities to support your work <img src="hex.svg"
 * ICD-9 and ICD-10 diagnostic and procedure codes available for comorbidity
   research.
 
+<!--
 * MIMIC-IV is widely used for method development, validation, and reproducible
   research in clinical informatics and outcomes research.
+-->
 
 * https://physionet.org/content/mimiciv/3.1/
-
 
 ## Example Data: MIMIC-IV v3.1
 
@@ -462,7 +442,7 @@ ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
 ```
 
 
-## More Complex Example<br>Elixhauser via AHRQ
+# Example:<br>Elixhauser per AHRQ
 
 ```{r}
 #| label: ahrq2026current
@@ -515,13 +495,14 @@ ahrq2026delta <-
   )
 ```
 
-* Present-on-admission is _required_ for _some_ conditions/ICD codes
+## Elixhauser per AHRQ
 
+* [Agency for Healthcare Research and Quality](https://www.ahrq.gov/) (AHRQ)
+* Present-on-admission is _required_ for _some_ conditions/ICD codes
 * Example:
   * ICD-10 diagnosis code K76.0: Fatty (change of) liver, not elsewhere classified
   * Maps to mild liver disease
   * Must be present-on-admission to flag the comorbidity
-    * existing comorbidity vs injury from current interventions
 
 ## Subject 19997538:
 * 3 encounters
@@ -747,26 +728,28 @@ DT1 |>
 #| echo: true
 #| eval: false
 medicalcoder::comorbidities(
-  data,       # a data.frame (one ICD code per row)
-  icd.codes,  # name of column in data with ICD codes
-  method,     # <family>_<variant>, eg, charlson_quan2005
-  id.vars = NULL, # column name(s) grouping the data
+  ### Required inputs:
+  data      = ,   # object inheriting data.frame; one ICD code per row
+  icd.codes = ,   # character; name of column in data containing ICD codes
+  method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
 
-  icdv.var = NULL, # variable ICD version
-  icdv     = NULL, # static ICD version
-  dx.var = NULL, # diagnostic/procedure code flag
-  dx     = NULL,
-  poa.var = NULL, # present-on-admission
-  poa     = NULL,
-  age.var = NULL, # age (years; only applicable to Charlson)
-  primarydx.var = NULL, # primary diagnosis flag
-  primarydx     = NULL,
+  ### Optional inputs controlling grouping and code attributes:
+  id.vars   = NULL,  # character; subject, encounter identifiers
+  icdv.var  = NULL,  # character; column name for ICD version (9 or 10)
+  icdv      = NULL,  # integer; constant ICD version for all rows
+  dx.var    = NULL,  # character; column name indicating  diagnosis (1) or procedure (0)
+  dx        = NULL,  # integer; constant dx indicator for all rows
+  poa.var   = NULL,  # character; column name for present-on-admission indicator
+  poa       = NULL,  # integer; constant POA indicator for all rows
+  age.var   = NULL,  # character; column name for age in years (Charlson only)
+  primarydx.var = NULL, # character; column name indicating primary diagnosis
+  primarydx     = NULL, # integer; constant primary dx indicator
 
-  flag.method = c("current", "cumulative"),
-
-  full.codes = TRUE,     # match on full ICD codes, eg, K76.0
-  compact.codes = TRUE,  # match on compact ICD codes, eg, K760
-  subconditions = FALSE  # report PCCC subconditions
+  ### Defaults:
+  flag.method   = "current", # "current" (encounter-level) or "cumulative" (longitudinal)
+  full.codes    = TRUE, # reference data[[icd.codes]] against full ICD codes, e.g., C4A.111
+  compact.codes = TRUE, # reference data[[icd.codes]] against compact ICD codes, e.g., C4A111
+  subconditions = FALSE # PCCC only: return subcondition flags when available
 )
 ```
 
@@ -861,45 +844,21 @@ medicalcoder::comorbidities(
 
 ## Testing
 
-* `method = "charlson_quan2005"`
-  * _medicalcoder_ results are equivalent to MIMIC-IV Code
-    * https://github.com/MIT-LCP/mimic-code
-  * _medicalcoder_ results are consistent, to R package _comorbidity_
-    * _comorbidity_ failed to flag malignancy from ICD-10 C4A.x codes
-  * _medicalcoder_ vs other R packages
-    * all observed differences have been false negatives from the other
-      packages.
+* _medicalcoder_ results are equivalent to [MIMIC-IV Code](https://github.com/MIT-LCP/mimic-code)
+* Identical results to SAS code published by AHRQ
+* _medicalcoder_ vs other R packages
+  * all observed differences have been false negatives from the other packages.
+* It's not a black box
+  * All source materials and code are open for review:
+  * https://github.com/dewittpe/medicalcoder/
 
-## Testing
-
-* `method = "elixhauser_quan2005"`
-  * _medicalcoder_ results are the same as R package _comorbidity_
-  * _medicalcoder_ vs other R packages
-    * all observed differences have been false negatives from the other
-      packages.
-
-* `method = "elixhauser_ahrqYYYY"`
-  * Part of the package testing suite
-  * Identical results to SAS code published by AHRQ
-  * https://github.com/dewittpe/medicalcoder/blob/main/tests/test-vs-ahrq.R
-
-## Testing
-
-* `method = "pccc_v2.0"`
-  * Part of the package testing suite
-  * Consistent results with R package _pccc_
-  * https://github.com/dewittpe/medicalcoder/blob/main/tests/test-vs-pccc_1.0.7.R
-
-## It's not a black box
-
-* All source materials and code are open for review:
-  https://github.com/dewittpe/medicalcoder/
-
+<!--
 # I bet it takes a long time<br>to compute all that<br>longitudinal stuff.
 
 ## For the MIMIC-IV v3.1 data
 
 ![](figure3.svg)
+-->
 
 <!--
 * comorbidity R package
@@ -915,7 +874,7 @@ medicalcoder::comorbidities(
   * SQL code requires some modification
 -->
 
-# So, reliable, fast.<br>It must be hard to install.
+# What do I need to use medicalcoder?
 
 ## Depends on R &geq; 3.5.0, No Imports
 
@@ -923,14 +882,14 @@ medicalcoder::comorbidities(
 #| label: medicalcoder-packageDescription
 #| echo: true
 #| output: true
-packageDescription("medicalcoder")[c("Depends", "Imports", "Suggests")]
+installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")] 
 ```
 
 * `data.table` and `dplyr` are suggested for performance
 
-## Depends on R &geq; 3.5.0, No Imports
-
 * All you need is a `medicalcoder_<version>.tar.gz` file and R &geq; 3.5.0
+
+<!--
 * Yes, one 2.7 MB tar ball
   * Comprehensive ICD database for 1997 - 2026 from CDC, CMS, WHO
   * 17 comorbidity algorithms
@@ -940,8 +899,9 @@ packageDescription("medicalcoder")[c("Depends", "Imports", "Suggests")]
   * All versions of R &geq; 3.5.0 without suggested packages
   * All versions of R &geq; 4.1.0 with suggested packages
   * https://github.com/dewittpe/medicalcoder/tree/main/testing
+-->
 
-
+<!--
 # What else can _medicalcoder_ do?
 
 ## _medicalcoder_ utilities
@@ -957,6 +917,26 @@ packageDescription("medicalcoder")[c("Depends", "Imports", "Suggests")]
   * `lookup_icd_codes()`
   * `is_icd()`
   * `icd_compact_to_full()`
+-->
+
+## Takeaway
+
+* Encounter-level flagging of comorbidities will
+
+  * Under count conditions
+
+  * Misclassify disease severity
+
+  * Fail to flag some conditions entirely
+
+* Carry-forward of an encounter-level flag is insufficient for flagging
+  comorbidities in longitudinal data
+
+* medicalcoder provides a light-weight, unified API allowing end users to
+  quickly a comorbidity algorithm to a data set while accounting for
+  present-on-admission status, primary diagnosis, ICD-version, ICD-type, full-
+  and compact-code formats, and accounting for the longitudinal nature of
+  medical data.
 
 ## Thanks and Links
 
@@ -978,10 +958,12 @@ packageDescription("medicalcoder")[c("Depends", "Imports", "Suggests")]
 :::
 ::::
 
-* CRAN: [https://cran.r-project.org/package=medicalcoder](https://cran.r-project.org/package=medicalcoder)
-* GitHub: [https://github.com/dewittpe/medicalcoder](https://github.com/dewittpe/medicalcoder)
-* Package Website: [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/)
-* Source code for these slide: [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026)
+| | |
+|:-- |:----- |
+| CRAN            | [https://cran.r-project.org/package=medicalcoder](https://cran.r-project.org/package=medicalcoder) |
+| GitHub          | [https://github.com/dewittpe/medicalcoder](https://github.com/dewittpe/medicalcoder) |
+| Package Website | [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/) |
+| These slides    | [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026) |
 
 <!-- ----------------------------------------------------------------------- -->
 <!--                              End of File                                -->
