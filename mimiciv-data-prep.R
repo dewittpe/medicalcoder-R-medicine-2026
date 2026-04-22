@@ -67,6 +67,15 @@ mimicivdata <-
   )
 names(mimicivdata) <- sub("\\.csv\\.gz$", "", basename(mimicivdata))
 
+if (length(mimicivdata) == 0L) {
+  if (interactive()) {
+    stop("No MIMIC-IV data to import")
+  } else {
+    message("No MIMIC-IV data to import")
+    quit(save = "no", status = 1)
+  }
+}
+
 mimicivdata <- lapply(mimicivdata, data.table::fread)
 
 # build an age data set
