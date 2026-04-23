@@ -2,13 +2,9 @@
 title: "<img src='hex.svg' width='200px'/><br>medicalcoder:"
 subtitle: "A Unified and Longitudinally Aware Framework<br>for ICD-Based Comorbidity Assessment in R"
 author:
-  - name: Peter E. DeWitt, PhD^1^; Seth Russell, MS^1^; James A. Feinstein, MD, MPH^2,3,4^; Margaret N. Rebull, MA^1^; Tellen D. Bennett, MD, MS^1,5^
+  - name: Peter E. DeWitt, PhD
     affiliation:
-      - <small> ^1^ Department of Biomedical Informatics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA<br>
-        ^2^ Adult and Child Center for Outcomes Research and Delivery Science, University of Colorado Anschutz Medical Campus, Aurora.<br>
-        ^3^ Children's Hospital Colorado, Aurora.<br>
-        ^4^ Department of Pediatrics, University of Colorado Anschutz Medical Campus, Aurora.<br>
-        ^5^ Section of Critical Care Medicine, Department of Pediatrics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA </small>
+      - <small> Department of Biomedical Informatics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA</small>
 date: "May 8, 2026"
 data-format: "MMMM D, YYYY"
 format:
@@ -42,12 +38,174 @@ highlight-style: rstudio_default-light.theme
 ```{r}
 #| label: setup
 #| include: false
+#| cache: true
 library(data.table)
 library(medicalcoder)
 options("datatable.print.topn" = 3)
 mimiciv <- arrow::read_feather("../mimiciv.feather")
 data.table::setDT(mimiciv)
 ```
+```{r}
+#| label: charlson-comorbidities-call-current
+#| include: false
+#| cache: true
+#| dependson: "setup"
+charlson_encounterlevel_quan2005 <-
+  medicalcoder::comorbidities(
+    data        = mimiciv,
+    icd.codes   = "icd_code",
+    method      = "charlson_quan2005",
+    id.vars     = c("subject_id", "encounter"),
+    icdv.var    = "icd_version",
+    dx.var      = "dx",
+    poa         = 1,
+    age.var     = "age",
+    primarydx   = 0,
+    flag.method = "current" # Default
+  )
+```
+```{r}
+#| label: charlson-comorbidities-call-cumulative
+#| include: false
+#| cache: true
+#| dependson: "setup"
+charlson_longitudinal_quan2005 <-
+  medicalcoder::comorbidities(
+    data        = mimiciv,
+    icd.codes   = "icd_code",
+    method      = "charlson_quan2005",
+    id.vars     = c("subject_id", "encounter"),
+    icdv.var    = "icd_version",
+    dx.var      = "dx",
+    poa         = 1,
+    age.var     = "age",
+    primarydx   = 0,
+    flag.method = "cumulative"
+  )
+```
+```{r}
+#| label: elixhauser-quan2005-current
+#| include: false
+#| cache: true
+#| dependson: "setup"
+elixhauser_encounterlevel_quan2005 <-
+  medicalcoder::comorbidities(
+    data        = mimiciv,
+    icd.codes   = "icd_code",
+    method      = "elixhauser_quan2005",
+    id.vars     = c("subject_id", "encounter"),
+    icdv.var    = "icd_version",
+    dx.var      = "dx",
+    poa         = 1,
+    primarydx   = 0,
+    flag.method = "current"
+  )
+```
+```{r}
+#| label: elixhauser-quan2005-cumulative
+#| include: false
+#| cache: true
+#| dependson: "setup"
+elixhauser_longitudinal_quan2005 <-
+  medicalcoder::comorbidities(
+    data        = mimiciv,
+    icd.codes   = "icd_code",
+    method      = "elixhauser_quan2005",
+    id.vars     = c("subject_id", "encounter"),
+    icdv.var    = "icd_version",
+    dx.var      = "dx",
+    poa         = 1,
+    primarydx   = 0,
+    flag.method = "cumulative"
+  )
+```
+```{r}
+#| label: cdelta
+#| echo: false
+#| cache: true
+#| dependson: ["charlson-comorbidities-call-current", "charlson-comorbidities-call-cumulative", "elixhauser-quan2005"]
+cdelta <-
+  data.table::rbindlist(
+    list(
+      "Charlson__Encounter-level"   = charlson_encounterlevel_quan2005,
+      "Charlson__Longitudinal"      = charlson_longitudinal_quan2005,
+      "Elixhauser__Encounter-level" = elixhauser_encounterlevel_quan2005,
+      "Elixhauser__Longitudinal"    = elixhauser_longitudinal_quan2005
+    ),
+    idcol = "set",
+    use.names = TRUE,
+    fill = TRUE
+  )
+cdelta[, c("method", "flag.method") := data.table::tstrsplit(set, "__")]
+cdelta[, set := NULL]
+```
+```{r}
+#| label: cdelta-long
+#| include: false
+#| cache: true
+#| dependson: "cdelta"
+cdelta_long <-
+  data.table::melt(
+    cdelta,
+    id.vars = c("method", "flag.method", "subject_id", "encounter"),
+    na.rm = TRUE
+  )
+cdelta_long <- cdelta_long[!(variable %in% c("age_score", "num_cmrb", "cci", "cmrb_flag", "readmission_index", "mortality_index", "HTN_C"))]
+cdelta_long <- cdelta_long[, .(count = sum(value)), by = .(method, flag.method, variable)]
+```
+```{r}
+#| label: ahrq2026current
+#| include: false
+#| cache: true
+#| dependson: "setup"
+ahrq2026current <-
+  medicalcoder::comorbidities(
+    data          = mimiciv,
+    icd.codes     = "icd_code",
+    id.vars       = c("subject_id", "encounter"),
+    icdv.var      = "icd_version",
+    dx.var        = "dx",
+    poa.var       = "poa",
+    primarydx.var = "pdx",
+    method        = "elixhauser_ahrq2026",
+    flag.method   = "current" # Encounter-level
+  )
+```
+```{r}
+#| label: ahrq2026cumulative
+#| include: false
+#| cache: true
+#| dependson: "setup"
+ahrq2026cumulative <-
+  medicalcoder::comorbidities(
+    data          = mimiciv,
+    icd.codes     = "icd_code",
+    id.vars       = c("subject_id", "encounter"),
+    icdv.var      = "icd_version",
+    dx.var        = "dx",
+    poa.var       = "poa",
+    primarydx.var = "pdx",
+    method        = "elixhauser_ahrq2026",
+    flag.method   = "cumulative" # Longitudinal, sort within subject_id by encounter
+  )
+```
+```{r}
+#| label: ahrq2026delta
+#| include: false
+#| cache: true
+#| dependson: ["ahrq2026current", "ahrq2026cumulative"]
+ahrq2026delta <-
+  merge(
+    x = ahrq2026current,
+    y = ahrq2026cumulative,
+    all = TRUE,
+    by = c("subject_id", "encounter"),
+    suffixes = c("_current", "_cumulative")
+  )
+```
+
+<!-- ----------------------------------------------------------------------- -->
+<!--                            Start the slides                             -->
 
 ## Have you ever...
 
@@ -59,6 +217,13 @@ data.table::setDT(mimiciv)
 * Needed a __longitudinal__ patient context?
 
 ::: {.notes}
+* Move on at 1:30
+
+* You'll have introduced yourself in the first 30 seconds
+* Spend up to 1 minute on this slide
+
+* Present on admission is part of AHRQ
+* Chronic conditions do not end at the end of the encounter
 :::
 
 ## If you answered yes to any of those questions...
@@ -75,7 +240,18 @@ _medicalcoder_ provides needed utilities to support your work
     * Multiple variants of each
 
 ::: {.notes}
+* Move on at 2:15
+
 * medicalcoder has a full internal ICD database
+  * CDC, CMS, WHO
+  * Diagnostic and Procedure Codes
+
+* The ecosystem is fragmented.
+  * Different tools implement different definitions
+  * different input data structures
+  * different ways of handel ICD-9 and ICD-10 data
+  * __And most importantly—operate at the encounter level ignoring the
+    longitudinal nature of medical records.__
 :::
 
 ## Example Data: MIMIC-IV v3.1
@@ -112,6 +288,8 @@ Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
 :::
 
 ::: {.notes}
+* This and the next slides done by 3:15
+
 * De-identified health data from patients admitted to intensive care
   units at Beth Israel Deaconess Medical Center.
 
@@ -119,6 +297,9 @@ Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
   research.
 
 * Some of the columns I created
+
+* MIMIC-IV is ideal for these examples because patients have multiple encounters
+  over time.
 
 * You can review the specific code for this work on github, link on the final
   slide
@@ -205,104 +386,20 @@ kableExtra::row_spec(5, bold = TRUE)
 
 `r qwraps2::frmt(nrow(mimiciv))` total rows
 
+::: {.notes}
+* Move on by 3:15
+
+* There are subjects, and __even encounters__, with mixed ICD versions
+  * Must account for different eras of coding
+:::
+
 ## Encounter-level vs Longitudinal Flagging of Comorbidities
-```{r}
-#| label: charlson-comorbidities-call-current
-#| include: false
-#| cache: true
-#| dependson: "setup"
-charlson_encounterlevel_quan2005 <-
-  medicalcoder::comorbidities(
-    data        = mimiciv,
-    icd.codes   = "icd_code",
-    method      = "charlson_quan2005",
-    id.vars     = c("subject_id", "encounter"),
-    icdv.var    = "icd_version",
-    dx.var      = "dx",
-    poa         = 1,
-    age.var     = "age",
-    primarydx   = 0,
-    flag.method = "current" # Default
-  )
-```
 
 ```{r}
-#| label: charlson-comorbidities-call-cumulative
-#| include: false
-#| cache: true
-#| dependson: "setup"
-charlson_longitudinal_quan2005 <-
-  medicalcoder::comorbidities(
-    data        = mimiciv,
-    icd.codes   = "icd_code",
-    method      = "charlson_quan2005",
-    id.vars     = c("subject_id", "encounter"),
-    icdv.var    = "icd_version",
-    dx.var      = "dx",
-    poa         = 1,
-    age.var     = "age",
-    primarydx   = 0,
-    flag.method = "cumulative"
-  )
-```
-
-```{r}
-#| label: elixhauser-quan2005-current
-#| include: false
-#| cache: true
-#| dependson: "setup"
-elixhauser_encounterlevel_quan2005 <-
-  medicalcoder::comorbidities(
-    data        = mimiciv,
-    icd.codes   = "icd_code",
-    method      = "elixhauser_quan2005",
-    id.vars     = c("subject_id", "encounter"),
-    icdv.var    = "icd_version",
-    dx.var      = "dx",
-    poa         = 1,
-    primarydx   = 0,
-    flag.method = "current"
-  )
-```
-```{r}
-#| label: elixhauser-quan2005-cumulative
-#| include: false
-#| cache: true
-#| dependson: "setup"
-elixhauser_longitudinal_quan2005 <-
-  medicalcoder::comorbidities(
-    data        = mimiciv,
-    icd.codes   = "icd_code",
-    method      = "elixhauser_quan2005",
-    id.vars     = c("subject_id", "encounter"),
-    icdv.var    = "icd_version",
-    dx.var      = "dx",
-    poa         = 1,
-    primarydx   = 0,
-    flag.method = "cumulative"
-  )
-```
-
-```{r}
-#| label: cdelta
+#| label: charlson-elixhauser-at-least-one-condidtion-graphic
 #| echo: false
 #| cache: true
-#| dependson: ["charlson-comorbidities-call-current", "charlson-comorbidities-call-cumulative", "elixhauser-quan2005"]
-cdelta <-
-  data.table::rbindlist(
-    list(
-      "Charlson__Encounter-level"   = charlson_encounterlevel_quan2005,
-      "Charlson__Longitudinal"      = charlson_longitudinal_quan2005,
-      "Elixhauser__Encounter-level" = elixhauser_encounterlevel_quan2005,
-      "Elixhauser__Longitudinal"    = elixhauser_longitudinal_quan2005
-    ),
-    idcol = "set",
-    use.names = TRUE,
-    fill = TRUE
-  )
-cdelta[, c("method", "flag.method") := data.table::tstrsplit(set, "__")]
-cdelta[, set := NULL]
-
+#| dependson: ["cdelta"]
 # encounters with at least one comorbidity
 cdelta[, .(n = sum(cmrb_flag), p = mean(cmrb_flag)), by = .(method, flag.method)] |>
   ggplot2::ggplot() +
@@ -329,6 +426,7 @@ cdelta[, .(n = sum(cmrb_flag), p = mean(cmrb_flag)), by = .(method, flag.method)
   )
 ```
 
+
 ::: {style="font-size: 0.5em;"}
 
 ---
@@ -337,43 +435,19 @@ Quan, Hude, et al. "Coding algorithms for defining comorbidities in ICD-9-CM and
 
 :::
 
-<!--
-## Conditions
+::: {.notes}
+* Move on by 4:00
 
-```{r}
-#| label: cdelta-long
-#| echo: false
-#| cache: true
-#| dependson: "cdelta"
-cdelta_long <-
-  data.table::melt(
-    cdelta,
-    id.vars = c("method", "flag.method", "subject_id", "encounter"),
-    na.rm = TRUE
-  )
-cdelta_long <- cdelta_long[!(variable %in% c("age_score", "num_cmrb", "cci", "cmrb_flag", "readmission_index", "mortality_index", "HTN_C"))]
-cdelta_long <- cdelta_long[, .(count = sum(value)), by = .(method, flag.method, variable)]
+* Not surprisingly there are more encounters flagged by when considering the
+  longitudinal nature of the data
 
-ggplot2::ggplot(cdelta_long) +
-  ggplot2::aes(x = variable, fill = flag.method, y = count) +
-  ggplot2::geom_col(position = ggplot2::position_dodge()) +
-  ggplot2::scale_y_continuous(
-    name = "Number of Encounters with at least one comorbidity",
-    label = scales::label_comma(),
-  ) +
-  ggplot2::scale_fill_manual(
-    name = "Flag Method",
-    values = c("Encounter-level" = "#6F263D", "Longitudinal" = "#4F8FCB")
-  ) +
-  ggplot2::coord_flip() +
-  ggplot2::facet_wrap( ~ method, scales = "free") +
-  ggplot2::theme_bw() +
-  ggplot2::theme(
-    axis.title.y = ggplot2::element_blank(),
-    legend.position = "bottom"
-  )
-```
--->
+* Ancedote: I have a couple chronic issues, I don't see the ICD codes on the
+  visit summary docs for every encounter I have with the medical system
+
+* Let's look at a specific cronic condition: Diabetes
+
+:::
+
 
 ## Diabetes
 
@@ -445,57 +519,23 @@ g2 <-
 ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
 ```
 
+::: {.notes}
+* Move on by
 
-```{r}
-#| label: ahrq2026current
-#| include: false
-#| cache: true
-#| dependson: "setup"
-ahrq2026current <-
-  medicalcoder::comorbidities(
-    data          = mimiciv,
-    icd.codes     = "icd_code",
-    id.vars       = c("subject_id", "encounter"),
-    icdv.var      = "icd_version",
-    dx.var        = "dx",
-    poa.var       = "poa",
-    primarydx.var = "pdx",
-    method        = "elixhauser_ahrq2026",
-    flag.method   = "current" # Encounter-level
-  )
-```
-```{r}
-#| label: ahrq2026cumulative
-#| include: false
-#| cache: true
-#| dependson: "setup"
-ahrq2026cumulative <-
-  medicalcoder::comorbidities(
-    data          = mimiciv,
-    icd.codes     = "icd_code",
-    id.vars       = c("subject_id", "encounter"),
-    icdv.var      = "icd_version",
-    dx.var        = "dx",
-    poa.var       = "poa",
-    primarydx.var = "pdx",
-    method        = "elixhauser_ahrq2026",
-    flag.method   = "cumulative" # Longitudinal, sort within subject_id by encounter
-  )
-```
-```{r}
-#| label: ahrq2026delta
-#| include: false
-#| cache: true
-#| dependson: ["ahrq2026current", "ahrq2026cumulative"]
-ahrq2026delta <-
-  merge(
-    x = ahrq2026current,
-    y = ahrq2026cumulative,
-    all = TRUE,
-    by = c("subject_id", "encounter"),
-    suffixes = c("_current", "_cumulative")
-  )
-```
+* Note that "Diabetes _without_ complications is flagged in _fewer_ encounters
+  when accounting for the longitudinal nature of EHR data
+
+* Example for a specific subject
+  * For both Charlson and Elixhauser:
+    * Diabetes (with or without complications) not reported on encounts 2, 5, 9
+    * The subject obviously still has DM on those encounters
+    * Severity changes
+    * medicalcoder will report the more server level of a diseease
+
+* This "problem" could be fixed with ad hoc encounter level flag carried
+  forward.  Howewver, it is possible for data loss as we will see in the next
+  example.
+:::
 
 ## Elixhauser per AHRQ
 
@@ -507,8 +547,12 @@ ahrq2026delta <-
   * Must be present-on-admission to flag the comorbidity
 
 ::: {.notes}
-That is, if K76.0 occurs during encounter 1, the patient does not get flagged as
-having mild liver disease as the condition could arise during acute care.
+* Move on by
+
+* That is, if K76.0 occurs during encounter 1,
+  * The patient did not have the comorbidity at the start of the encounter
+  * Malignancy (cancer) is an exmaple of a condition where POA is not required
+
 :::
 
 ## Subject 19997538:
@@ -567,6 +611,19 @@ gt::gt()
 
 * Simple encounter level carry-forward will fail to flag the mild liver disease
 
+::: {.notes}
+
+* Only way for the mild liver disease to be flagged correctly on encounters 2
+  and 3 is for the record to have K76.0 reported as POA on those encounters
+
+* Because the ICD code is only reported on encounter 1 and the comorbidity is
+  _correctly_ not flagged on encounter 1 the comorbidity is lost for the subject
+  when only looking at encounter-level data
+
+* segway: believe it or not, this type of data loss can be even worse...
+
+:::
+
 ## PCCC v3 (Feinstein 2024)
 
 * ICD codes map to conditions and subconditions
@@ -580,6 +637,21 @@ gt::gt()
 
 Feinstein, James A., et al. "Pediatric complex chronic condition system version 3." JAMA Network Open 7.7 (2024): e2420579. doi:10.1001/jamanetworkopen.2024.20579
 
+:::
+
+
+::: {.notes}
+* Conditions are flagged as
+  * DxPr - flagged due to a diagnostic and or procedure code which is not
+    technology-dependent
+  * Tech - flagged only due to technology-dependence
+  * DxPrTech - Flagged due to at least one diagnostic or procedure code and at
+    least one technology-dependent code
+
+
+* NOTE: Yes, MIMIC-IV is adult data and PCCC is for pediatrics.  We use the
+  adult data here to illustrate the algorithm, not make clinical infrence nor
+  define a cohort.
 :::
 
 
@@ -710,6 +782,32 @@ DT1 |>
   gt::tab_footnote(footnote = "† A technology-dependent code has been carried forward in the record.  Since no non-technology-dependent code was reported on this, or a prior, encounter, no comorbidities are flagged.")
 ```
 
+::: {.notes}
+* Move on by
+
+* This patient has, over time,
+  * a metabolic conditions
+  * a miscellaneous (this will be a technology dependece or transplant not well
+    defined by the other 10 conditions
+  * respiratory condition
+
+* Metabolic is simple: DxPr from ecounter 4 and on with couple missing
+  encounters
+  * a flag carried forward would be sufficient
+
+* Respiratory:
+  * tech dep on encounter 1 - only code so _no flag_
+  * Nothing reported on encounter 2 or 3
+  * Flag on encounter 4 as Tech becuase of the Metabolic condition
+    * only works for the longitudinal approach as the code is not repeated
+
+* Miscellaneous is similar to the respiratory condition
+
+* IMPORTANT: the risk profile for this patient is very different beween the two
+  methods for flagging comorbidities.
+
+:::
+
 ## The Point:
 
 * Encounter-level flagging of comorbidities will
@@ -723,6 +821,19 @@ DT1 |>
 * Carry-forward of an encounter-level flag is insufficient for flagging
   comorbidities in longitudinal data
 
+::: {.notes}
+:::
+
+## `medicalcoder::comorbidities()` {auto-animate=true}
+
+::: {.notes}
+* A single function call provides access to all the comorbidity methods
+* three groups of inputs:
+  * required inputs
+  * optionals inputs
+  * defaults
+:::
+
 ## `medicalcoder::comorbidities()` {auto-animate=true}
 
 ```r
@@ -732,6 +843,17 @@ medicalcoder::comorbidities(
   icd.codes = ,   # character; name of column in data containing ICD codes
   method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
 ```
+
+::: {.notes}
+* data should be in a "long" format, one ICD code per row.   Optional columns
+  for subject/encounter ids.  A data.frame is required.  data.tables and tibbles
+  are recommended for performance
+
+* icd.codes is a character string telling the software the name of the column in
+  data containing the ICD codes
+
+* method: the family (Charlson, Elixhauser, PCCC) and the variant
+:::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
 
@@ -754,6 +876,19 @@ medicalcoder::comorbidities(
   primarydx.var = NULL, # character; column name indicating primary diagnosis
   primarydx     = NULL, # integer; constant primary dx indicator
 ```
+
+::: {.notes}
+* Optional inputs are extremly useful
+
+  * id.vars a character vector of columns in data
+    * Important: the last id is used for sorting when using the longitudinal
+      aware flagging
+
+  * icdv.var; icdv and other pairs of inputs: the .var is the name of a column
+    in data denoting the ICD version, diag/proc code, POA...  without the .var
+    is quick way to tell medicalcoder that all the data is of a particular
+    version, type, etc.
+:::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
 
@@ -784,92 +919,22 @@ medicalcoder::comorbidities(
 )
 ```
 
-<!--
-## Example calls
+::: {.notes}
+* flag.method:
 
-```{r}
-#| label: ahrq2026current
-#| eval: false
-#| echo: true
-```
+  * "current" is the "encounter-level" what it really means is aggreate within the
+    uniuque id.vars, if id.vars or omitted then the whole of data is treated as
+    one encounter for one subject
 
-```{r}
-#| label: ahrq2026cumulative
-#| eval: false
-#| echo: true
-```
--->
+  * "cumulative" requires at least two id.vars and will flag within the unique
+    sets of id.vars while sorting by the last id.var for longitudinal support,
 
-<!--
-  Omit optionally showing all the calls, this might be useful for a live version
-  of the talk but not the pre-recorded R-Medicine talk
--->
+  * data base style matching (regex is common in other implementations)
+    on full and/or compact codes
 
-<!--
+  * subconditions are only relevant to PCCC
 
-## Calls used in the above
-
-```{r}
-#| label: charlson-comorbidities-call-current
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Charlson (Quan 2005) Encounter-level
-```
-```{r}
-#| label: charlson-comorbidities-call-cumulative
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Charlson (Quan 2005) Longitudinal
-```
-```{r}
-#| label: elixhauser-quan2005-current
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Elixhauser (Quan 2005) Encounter-level
-```
-```{r}
-#| label: elixhauser-quan2005-cumulative
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Elixhauser (Quan 2005) Longitudinal
-```
-
-## Calls used in the above
-
-```{r}
-#| label: ahrq2026current
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Elixhauser (AHRQ 2026) Encounter-level
-```
-```{r}
-#| label: ahrq2026cumulative
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: Elixhauser (AHRQ 2026) Longitudinal
-```
-```{r}
-#| label: pccc-current
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: PCCC v3 (Feinstein 2024) Encounter-level
-```
-```{r}
-#| label: pccc-current
-#| eval: false
-#| echo: true
-#| code-fold: true
-#| code-summary: PCCC v3 (Feinstein 2024) Longitudinal
-```
-
--->
+:::
 
 ## Trusting the Results
 
@@ -881,6 +946,10 @@ medicalcoder::comorbidities(
   * It's not a black box
     * All source materials and code are open for review:
     * https://github.com/dewittpe/medicalcoder/
+
+::: {.notes}
+* Testing is part of the package source code
+:::
 
 ## Depends on R &geq; 3.5.0, No Imports
 
@@ -894,6 +963,11 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 * `data.table` and `dplyr` are suggested for performance
 
 * All you need is a `medicalcoder_<version>.tar.gz` file and R &geq; 3.5.0
+
+::: {.notes}
+* Tested against all versions of R 3.5.0 and newer without suggested packages
+* Tested against all versions of R 4.1.0 and newer with suggested packages
+:::
 
 ## Takeaway
 
@@ -913,6 +987,12 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
   present-on-admission status, primary diagnosis, ICD-version, ICD-type, full-
   and compact-code formats, and accounting for the longitudinal nature of
   medical data.
+
+::: {.notes}
+* Move on by
+
+* One API...
+:::
 
 ## Thanks and Links
 
@@ -940,6 +1020,38 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 | GitHub          | [https://github.com/dewittpe/medicalcoder](https://github.com/dewittpe/medicalcoder) |
 | Package Website | [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/) |
 | These slides    | [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026) |
+
+::: {.notes}
+:::
+
+# Appendix
+
+## Conditions
+
+```{r}
+#| label: plot-conditions
+#| echo: false
+#| cache: true
+#| dependson: "cdelta-long"
+ggplot2::ggplot(cdelta_long) +
+  ggplot2::aes(x = variable, fill = flag.method, y = count) +
+  ggplot2::geom_col(position = ggplot2::position_dodge()) +
+  ggplot2::scale_y_continuous(
+    name = "Number of Encounters with at least one comorbidity",
+    label = scales::label_comma(),
+  ) +
+  ggplot2::scale_fill_manual(
+    name = "Flag Method",
+    values = c("Encounter-level" = "#6F263D", "Longitudinal" = "#4F8FCB")
+  ) +
+  ggplot2::coord_flip() +
+  ggplot2::facet_wrap( ~ method, scales = "free") +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    axis.title.y = ggplot2::element_blank(),
+    legend.position = "bottom"
+  )
+```
 
 <!-- ----------------------------------------------------------------------- -->
 <!--                              End of File                                -->
