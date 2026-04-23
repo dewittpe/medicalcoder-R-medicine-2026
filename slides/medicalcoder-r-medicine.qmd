@@ -5,8 +5,6 @@ author:
   - name: Peter E. DeWitt, PhD
     affiliation:
       - <small> Department of Biomedical Informatics, University of Colorado School of Medicine, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA</small>
-date: "May 8, 2026"
-data-format: "MMMM D, YYYY"
 format:
   revealjs:
     theme:
@@ -204,8 +202,6 @@ ahrq2026delta <-
   )
 ```
 
-<!-- ----------------------------------------------------------------------- -->
-<!--                            Start the slides                             -->
 
 ## Have you ever...
 
@@ -217,7 +213,7 @@ ahrq2026delta <-
 * Needed a __longitudinal__ patient context?
 
 ::: {.notes}
-* Move on at 1:30
+* Move on by 1:30
 
 * You'll have introduced yourself in the first 30 seconds
 * Spend up to 1 minute on this slide
@@ -240,7 +236,7 @@ _medicalcoder_ provides needed utilities to support your work
     * Multiple variants of each
 
 ::: {.notes}
-* Move on at 2:15
+* Move on by 2:15
 
 * medicalcoder has a full internal ICD database
   * CDC, CMS, WHO
@@ -262,22 +258,6 @@ _medicalcoder_ provides needed utilities to support your work
 #| dependson: "setup"
 mimiciv
 ```
-
-::: {style="font-size: 0.7em;"}
-
-| Column         | Description                                        | Source                |
-| :--            | :------                                            | :--                   |
-| `subject_id`   | subject identifier                                 | MIMIC-IV              |
-| `encounter`    | Encounter Sequence within `subject_id`             | constructed           |
-| `age`          | Age, in years, at admission                        | MIMIC-IV; constructed |
-| `icd_code`     | ICD code                                           | MIMIC-IV              |
-| `icd_version ` | ICD version integer value 9 or 10                  | MIMIC-IV              |
-| `dx`           | Indicator for diagnostic (1) or procedure (0) code | MIMIC-IV; constructed |
-| `poa`          | Present-on-admission flag                          | constructed           |
-| `pdx`          | Primary diagnosis flag                             | constructed           |
-
-:::
-
 
 ::: {style="font-size: 0.5em;"}
 
@@ -303,6 +283,20 @@ Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
 
 * You can review the specific code for this work on github, link on the final
   slide
+
+| Column         | Description                                        | Source                |
+| :--            | :------                                            | :--                   |
+| `subject_id`   | subject identifier                                 | MIMIC-IV              |
+| `encounter`    | Encounter Sequence within `subject_id`             | constructed           |
+| `age`          | Age, in years, at admission                        | MIMIC-IV; constructed |
+| `icd_code`     | ICD code                                           | MIMIC-IV              |
+| `icd_version ` | ICD version integer value 9 or 10                  | MIMIC-IV              |
+| `dx`           | Indicator for diagnostic (1) or procedure (0) code | MIMIC-IV; constructed |
+| `poa`          | Present-on-admission flag                          | constructed           |
+| `pdx`          | Primary diagnosis flag                             | constructed           |
+
+
+
 :::
 
 ## Example Data: MIMIC-IV v3.1
@@ -532,6 +526,11 @@ ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
     * Severity changes
     * medicalcoder will report the more server level of a diseease
 
+| Method      | Encounter-level                  | Longitudinal            |
+|:--          | :---:                            | :---:                   |
+| Charlson    | 12/17 w/o cx; 1/17 w cx; 4 no dm | 11/17 w/o cx; 6/17 w cx |
+| Elixhauser  | 11/17 w/o cx; 2/17 w cx; 4 no dm | 5/17 w/o cx; 12/17 w cx |
+
 * This "problem" could be fixed with ad hoc encounter level flag carried
   forward.  Howewver, it is possible for data loss as we will see in the next
   example.
@@ -563,7 +562,7 @@ ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
 #| label: show-s19997538-liver-disease
 #| echo: true
 #| output: true
-mimiciv[subject_id == 19997538, max(encounter)]
+mimiciv[subject_id == 19997538, .(icdcodes = .N, encounters = max(encounter))]
 mimiciv[subject_id == 19997538 & icd_code == "K760"]
 ```
 
@@ -612,6 +611,7 @@ gt::gt()
 * Simple encounter level carry-forward will fail to flag the mild liver disease
 
 ::: {.notes}
+* Move on by
 
 * Only way for the mild liver disease to be flagged correctly on encounters 2
   and 3 is for the record to have K76.0 reported as POA on those encounters
@@ -641,6 +641,7 @@ Feinstein, James A., et al. "Pediatric complex chronic condition system version 
 
 
 ::: {.notes}
+* Move on by
 * Conditions are flagged as
   * DxPr - flagged due to a diagnostic and or procedure code which is not
     technology-dependent
@@ -822,11 +823,13 @@ DT1 |>
   comorbidities in longitudinal data
 
 ::: {.notes}
+* Move on by
 :::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
 
 ::: {.notes}
+* Move on by
 * A single function call provides access to all the comorbidity methods
 * three groups of inputs:
   * required inputs
@@ -845,6 +848,7 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
+* Move on by
 * data should be in a "long" format, one ICD code per row.   Optional columns
   for subject/encounter ids.  A data.frame is required.  data.tables and tibbles
   are recommended for performance
@@ -878,6 +882,7 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
+* Move on by
 * Optional inputs are extremly useful
 
   * id.vars a character vector of columns in data
@@ -920,6 +925,7 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
+* Move on by
 * flag.method:
 
   * "current" is the "encounter-level" what it really means is aggreate within the
@@ -948,6 +954,7 @@ medicalcoder::comorbidities(
     * https://github.com/dewittpe/medicalcoder/
 
 ::: {.notes}
+* Move on by
 * Testing is part of the package source code
 :::
 
@@ -965,6 +972,7 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 * All you need is a `medicalcoder_<version>.tar.gz` file and R &geq; 3.5.0
 
 ::: {.notes}
+* Move on by
 * Tested against all versions of R 3.5.0 and newer without suggested packages
 * Tested against all versions of R 4.1.0 and newer with suggested packages
 :::
@@ -1022,6 +1030,7 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 | These slides    | [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026) |
 
 ::: {.notes}
+* Move on by
 :::
 
 # Appendix
