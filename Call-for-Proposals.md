@@ -1,0 +1,67 @@
+# Call for Proposals
+
+## Submissions are now open!
+
+Please read the details below regarding each submission type prior to completing the submission process.
+
+## Dates to Remember
+
+CFP Closes: Friday, March 6th at 11:59 PM ET
+
+CFP Notifications: Friday, March 20th
+
+Schedule Announcement: Friday, April 3rd
+
+Pre-Recorded Video Submission: Monday, April 27th
+
+## Submit a lightning or regular talk
+
+Lightning talks (10 min, Thursday May 7th or Friday May 8th)
+
+Regular talks (20 min, Thursday May 7th or Friday May 8th)
+
+An abstract proposal should describe a presentation of methodology, a study or project, or an example or case study relevant to one (or more) of our fields of interest, with R-based tools having a substantial role in the work. The content of the presentation should be of interest to the R/Medicine community.
+
+Avoid sales or marketing pitches and discussion of unlicensed or potentially closed-source technologies in your proposal. Talks of this nature are almost always rejected because they diminish the integrity of our events and are rarely well-received by conference attendees.
+
+We do not intend to provide strict instructions on how to prepare your proposal; however, we hope you will review the following guidelines to help you prepare the best submission possible. To get started, here are three questions you should consider before submitting your proposal:
+
+What are you hoping to get from your presentation?
+
+What do you expect the audience to gain from your presentation?
+
+How will your presentation help better the R Medicine ecosystem?
+
+Remember the questions above when writing your proposal, and think of ways to make it interesting for attendees as you share your experiences, educate the community about a method or an issue, or generate interest in a project.
+
+All accepted speakers will be required to pre-record their talk and submit the video by Monday, April 27th.
+
+## Submit a demo or workshop
+
+Demos (1 hour demo of an approach or a package, Monday May 4th) Done live, preferably interactive
+
+Workshops (2-3 hours on a topic, Monday May 4th) Detailed instruction on a topic, usually with a website and a repo, participants can choose to code along, include 5-10 min breaks each hour.
+
+Timeslots for workshops and demos are limited, and all will take place on Monday, May 4th. Submissions will require a detailed outline of the planned content, as well as the “run of show” indicating how much time will be spent on instruction, live coding, interactive demo, participant activity, breaks, etc, and in what order, covering the duration of the session. Workshops and demos should be well planned out in advance, and any live demonstration should be thoroughly vetted in advance as well as immediately prior to the session to ensure a seamless experience. Thought must be given to style or presentation, including screen size, font size, colors, and other accessibility issues.
+
+In addition, submissions for a demo or workshop will also require a brief 2-3 minute recorded explanation of the demo or workshop, based on the provided abstract and outline.
+
+## The Chat
+
+R/Medicine has a strong tradition of active discussion in a virtual chat during virtual presentations, and this discussion is much better if the presenter or a co-presenter is active in the chat, sharing relevant links and answering questions during the presentation. If you have relevant links in your presentation, put them in a document ahead of time so that you can easily drop them into the chat when appropriate. If you have a co-presenter, decide who will present and who will chat (or take turns at a natural switching point). All speakers are required to be present during their talk, despite the requirement for pre-recording.
+
+## Recording
+
+Note that all talks, demos, and workshops will be recorded and posted to a playlist on the R Consortium’s YouTube channel.
+
+## Complimentary Passes For Speakers
+
+One complimentary pass for the event will be provided for the accepted primary speaker and a co-speaker.
+
+## Important Notes
+
+All speakers are required to adhere to our Code of Conduct.
+
+## First Time Submitting? Don’t Feel Intimidated
+
+We strongly encourage first-time speakers to submit talks for R/Medicine. We offer an inclusive environment for all levels of presenters, from beginner to expert. If you aren’t sure about your abstract, reach out to us and we will be happy to provide advice on your proposal or review it in advance: rmedicine.conference@gmail.com.
