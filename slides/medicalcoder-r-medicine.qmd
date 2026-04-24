@@ -203,51 +203,72 @@ ahrq2026delta <-
 ```
 
 
-## Have you ever...
+## 
 
-* Worked with ICD-9 and ICD-10 data?
-* Assessed Charlson or Elixhauser comorbidities?
-* Assessed Pediatric Complex Chronic Conditions (PCCC)?
-* Been concerned about present-on-admission flags?
-* Primary verse secondary diagnosis?
-* Needed a __longitudinal__ patient context?
+* Have you ever:
+  * Worked with ICD-9 and ICD-10 data?
+  * Assessed Charlson or Elixhauser comorbidities?
+  * Assessed Pediatric Complex Chronic Conditions (PCCC)?
+  * Been concerned about present-on-admission flags?
+  * Primary verse secondary diagnosis?
 
-::: {.notes}
-* Move on by 1:30
+  * Needed a __longitudinal__ patient context?
+    * 76.4% of US adults report at least one chronic condition
+    * 59.5% report two or more
 
-* You'll have introduced yourself in the first 30 seconds
-* Spend up to 1 minute on this slide
+_medicalcoder_ supports all of this natively!
 
-* Present on admission is part of AHRQ
-* Chronic conditions do not end at the end of the encounter
+::: {style="font-size: 0.5em;"}
+
+---
+
+Watson, Kathleen B., et al. "Trends in multiple chronic conditions among US
+adults, by life stage, behavioral risk factor surveillance system, 2013–2023."
+Preventing chronic disease 22 (2025): E15.
+
 :::
 
-## If you answered yes to any of those questions...
-
-_medicalcoder_ provides needed utilities to support your work
-
-* Designed for real-world EHR data
-  * mixed ICD-9 and ICD-10
-  * full and compact code formats
-  * present-on-admission and primary diagnosis indicators
-  * longitudinal patient context
-  * Comorbidity Algorithms
-    * Three families: Charlson, Elixhauser, and PCCC
-    * Multiple variants of each
-
 ::: {.notes}
-* Move on by 2:15
 
-* medicalcoder has a full internal ICD database
-  * CDC, CMS, WHO
-  * Diagnostic and Procedure Codes
+I want to start with a few questions that may sound familiar.
 
-* The ecosystem is fragmented.
-  * Different tools implement different definitions
-  * different input data structures
-  * different ways of handel ICD-9 and ICD-10 data
-  * __And most importantly—operate at the encounter level ignoring the
-    longitudinal nature of medical records.__
+Have you had to work with ICD-9 or ICD-10 codes in your datasets?
+
+Have you had to map those codes to comorbidity systems such as Charlson,
+Elixhauser, or pediatric complex chronic conditions (PCCC)?
+
+Have you had to worry about present-on-admission flags? primary versus secondary
+diagnoses? mixed ICD versions? 
+
+Or, most importantly for this presentation, the longitudinal nature of patient
+records?
+
+If so, then you have probably run into the same frustrations that I have. 
+There are available tools but they are fragmented. 
+
+One tool gives you Charlson, another gives you Elixhauser, a third gives you
+PCCC. They may be written in different languages, require different input
+structures, and handle mixed ICD-9 and ICD-10 data inconsistently. In practice,
+it is messy.
+
+I built `medicalcoder` to relieve the frustrations and make this type of work
+easier and more consistent.
+
+`medicalcoder` is designed for real-world EHR data. It handles mixed ICD
+versions within the same dataset, full and compact code formats,
+present-on-admission status, primary diagnosis indicators, and multiple
+comorbidity algorithms. 
+
+Most importantly, it can account for longitudinal patient history.
+
+Why does that matter?
+
+Because chronic conditions are common (3 out of 4 adults in the US reporting at
+least one chronic condition), and they are not documented on every encounter. I
+know that from the literature, and I know it from my own medical records. If I
+look only at encounter-level diagnosis codes, I will miss chronic conditions
+that are still clinically relevant but simply were not recorded at that visit.
+
 :::
 
 ## Example Data: MIMIC-IV v3.1
@@ -268,21 +289,23 @@ Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
 :::
 
 ::: {.notes}
-* This and the next slides done by 3:15
 
-* De-identified health data from patients admitted to intensive care
-  units at Beth Israel Deaconess Medical Center.
+To illustrate that point, I will use the MIMIC-IV dataset. If you are not
+familiar with it, MIMIC-IV is a de-identified clinical dataset of adult patients
+from Beth Israel Deaconess Medical Center. It is especially useful here because
+it includes multiple encounters per patient and contains both ICD-9 and ICD-10
+codes.
 
-* ICD-9 and ICD-10 diagnostic and procedure codes available for comorbidity
-  research.
+For the following examples, I prepared the data in long format, with one ICD
+code per row and additional variables indicating code version, diagnosis or
+procedure status, present-on-admission status, and primary diagnosis where
+relevant, and of course, subject and encounter ids.
 
-* Some of the columns I created
+You can gain access to this data through physionet.  The code I used to prepare
+the data is available on GitHub.  The URL is on the final slide of this
+presentation.
 
-* MIMIC-IV is ideal for these examples because patients have multiple encounters
-  over time.
-
-* You can review the specific code for this work on github, link on the final
-  slide
+Notes on the columns (if needed)
 
 | Column         | Description                                        | Source                |
 | :--            | :------                                            | :--                   |
@@ -294,8 +317,6 @@ Get access to the MIMIC-IV v3.1 data: https://physionet.org/content/mimiciv/3.1/
 | `dx`           | Indicator for diagnostic (1) or procedure (0) code | MIMIC-IV; constructed |
 | `poa`          | Present-on-admission flag                          | constructed           |
 | `pdx`          | Primary diagnosis flag                             | constructed           |
-
-
 
 :::
 
@@ -381,10 +402,15 @@ kableExtra::row_spec(5, bold = TRUE)
 `r qwraps2::frmt(nrow(mimiciv))` total rows
 
 ::: {.notes}
-* Move on by 3:15
 
-* There are subjects, and __even encounters__, with mixed ICD versions
-  * Must account for different eras of coding
+One point worth emphasizing is that mixed ICD data are not rare. In MIMIC-IV,
+tens of thousands of subjects have both ICD-9 and ICD-10 codes, and even some
+encounters contain both. Any workflow that assumes a single ICD version
+throughout a dataset is going to lose information or require error-prone post
+hoc aggregation.
+
+medicalcoder was built to handle that directly.
+
 :::
 
 ## Encounter-level vs Longitudinal Flagging of Comorbidities
@@ -420,25 +446,29 @@ cdelta[, .(n = sum(cmrb_flag), p = mean(cmrb_flag)), by = .(method, flag.method)
   )
 ```
 
-
 ::: {style="font-size: 0.5em;"}
 
 ---
 
-Quan, Hude, et al. "Coding algorithms for defining comorbidities in ICD-9-CM and ICD-10 administrative data." Medical care 43.11 (2005): 1130-1139. DOI: 10.1097/01.mlr.0000182534.19832.83
+Quan, Hude, et al. "Coding algorithms for defining comorbidities in ICD-9-CM and
+ICD-10 administrative data." Medical care 43.11 (2005): 1130-1139. DOI:
+10.1097/01.mlr.0000182534.19832.83
 
 :::
 
 ::: {.notes}
-* Move on by 4:00
 
-* Not surprisingly there are more encounters flagged by when considering the
-  longitudinal nature of the data
+Now let us look at results from two common comorbidity systems: Charlson and
+Elixhauser, using the Quan 2005 mappings.
 
-* Ancedote: I have a couple chronic issues, I don't see the ICD codes on the
-  visit summary docs for every encounter I have with the medical system
+A basic but important observation is that diagnosis codes associated with a
+comorbidity are not reported on every encounter. The condition may still be
+present even when the code is absent. So if we allow comorbidities to persist
+longitudinally once established, we identify more encounters in which the
+condition is relevant.
 
-* Let's look at a specific cronic condition: Diabetes
+That idea is easy to understand in the abstract, but it becomes more interesting
+when severity changes over time. Diabetes is a good example.
 
 :::
 
@@ -514,26 +544,37 @@ ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
 ```
 
 ::: {.notes}
-* Move on by
 
-* Note that "Diabetes _without_ complications is flagged in _fewer_ encounters
-  when accounting for the longitudinal nature of EHR data
+Under both Charlson and Elixhauser, diabetes can be classified as either without
+complications or with complications. 
 
-* Example for a specific subject
-  * For both Charlson and Elixhauser:
-    * Diabetes (with or without complications) not reported on encounts 2, 5, 9
-    * The subject obviously still has DM on those encounters
-    * Severity changes
-    * medicalcoder will report the more server level of a diseease
+For one particular subject,
+there are encounters where no diabetes code appears at all, even though the
+patient clearly still has diabetes (encounters 2, 5, and 9).
+
+If we rely only on encounter-level coding, those encounters look falsely clean.
+
+Once we account for patient history, we carry the condition forward. More
+importantly, we can also carry forward the most severe established state when
+that is what the algorithm requires. In other words, a longitudinal approach
+changes not only whether diabetes is flagged, but also how it is classified.
+
+This is seen in the aggregate as there are fewer encounters flagged as DM without
+complications when accounting for patient history compared to the results when
+only looking within an encounter.
+
+This matters for cohort definition and risk adjustment.
+
+Now, someone could reasonably say: if the only issue is persistence, then maybe
+we can just flag comorbidities at the encounter level and carry them forward
+later. Sometimes that works. But there are more nuanced cases where
+important information is lost before you ever get the chance to do that.
 
 | Method      | Encounter-level                  | Longitudinal            |
 |:--          | :---:                            | :---:                   |
 | Charlson    | 12/17 w/o cx; 1/17 w cx; 4 no dm | 11/17 w/o cx; 6/17 w cx |
 | Elixhauser  | 11/17 w/o cx; 2/17 w cx; 4 no dm | 5/17 w/o cx; 12/17 w cx |
 
-* This "problem" could be fixed with ad hoc encounter level flag carried
-  forward.  Howewver, it is possible for data loss as we will see in the next
-  example.
 :::
 
 ## Elixhauser per AHRQ
@@ -546,17 +587,24 @@ ggpubr::ggarrange(g1, g2, nrow = 1, common.legend = TRUE, legend = "bottom")
   * Must be present-on-admission to flag the comorbidity
 
 ::: {.notes}
-* Move on by
 
-* That is, if K76.0 occurs during encounter 1,
-  * The patient did not have the comorbidity at the start of the encounter
-  * Malignancy (cancer) is an exmaple of a condition where POA is not required
+One example comes from the AHRQ version of Elixhauser, where some conditions
+depend on present-on-admission status. That distinction matters because it
+separates comorbidities the patient came in with from complications or acute
+issues that arose during the encounter.
+
+Cancer, is present-on-admission exempt. Cancer is flagged on the encounter the
+ICD code is reported on regardless of present-on-admission status.
+
+Mild liver disease, on the other hand, requires the ICD code to be flagged as
+present-on-admission. 
+
+A specific example: K76.0 Fatty (change of) Liver not elsewhere classified,
+maps to mild liver disease and requires POA to be flagged.
 
 :::
 
 ## Subject 19997538:
-* 3 encounters
-* K76.0 is reported, not present-on-admission, on encounter 1
 
 ```{r}
 #| label: show-s19997538-liver-disease
@@ -611,20 +659,32 @@ gt::gt()
 * Simple encounter level carry-forward will fail to flag the mild liver disease
 
 ::: {.notes}
-* Move on by
 
-* Only way for the mild liver disease to be flagged correctly on encounters 2
-  and 3 is for the record to have K76.0 reported as POA on those encounters
+For this subject K760 appears on encounter 1 of 3, and is reported as
+not-present-on-admission.  
 
-* Because the ICD code is only reported on encounter 1 and the comorbidity is
-  _correctly_ not flagged on encounter 1 the comorbidity is lost for the subject
-  when only looking at encounter-level data
+(NOTE: POA flags are not part of the MIMIC-IV data, I constructed these flags
+probabilistically based on sequence number)
 
-* segway: believe it or not, this type of data loss can be even worse...
+When flagging comorbidities using only encounter level data, the mild liver
+disease is correctly _not_ flagged on encounter 1.  It is also not flagged on
+encounters 2 and 3 because the relevent code was not reported on the subsequent
+encounters.
+
+When considering the longitudinal nature of medical records, the condition is
+correctly not flagged on encounter 1 and is flagged on encounters 2 and 3
+because of the patient's history.
+
+Once the history of a condition exists, it can become
+relevant for future encounters even when the code is not re-reported.
+
+If you only compute encounter-level flags and then try to repair things later,
+you cannot recover information that was never retained in the first place. The
+longitudinal logic has to be part of the flagging process itself.
 
 :::
 
-## PCCC v3 (Feinstein 2024)
+## PCCC
 
 * ICD codes map to conditions and subconditions
 * Technology dependence is a subcondition
@@ -635,24 +695,22 @@ gt::gt()
 
 ---
 
-Feinstein, James A., et al. "Pediatric complex chronic condition system version 3." JAMA Network Open 7.7 (2024): e2420579. doi:10.1001/jamanetworkopen.2024.20579
+Feinstein, James A., et al. "Pediatric complex chronic condition system version
+3." JAMA Network Open 7.7 (2024): e2420579.
+doi:10.1001/jamanetworkopen.2024.20579
 
 :::
 
 
 ::: {.notes}
-* Move on by
-* Conditions are flagged as
-  * DxPr - flagged due to a diagnostic and or procedure code which is not
-    technology-dependent
-  * Tech - flagged only due to technology-dependence
-  * DxPrTech - Flagged due to at least one diagnostic or procedure code and at
-    least one technology-dependent code
 
+The same problem becomes even more pronounced in more complex systems such as
+PCCC. There, condition assignment can depend on combinations of diagnosis and
+procedure information, including distinctions such as technology dependence. In
+those settings, encounter-only logic can both miss conditions and misclassify
+their severity. Carrying forward the right historical information can change the
+patient's risk profile in meaningful ways.
 
-* NOTE: Yes, MIMIC-IV is adult data and PCCC is for pediatrics.  We use the
-  adult data here to illustrate the algorithm, not make clinical infrence nor
-  define a cohort.
 :::
 
 
@@ -784,28 +842,19 @@ DT1 |>
 ```
 
 ::: {.notes}
-* Move on by
 
-* This patient has, over time,
-  * a metabolic conditions
-  * a miscellaneous (this will be a technology dependece or transplant not well
-    defined by the other 10 conditions
-  * respiratory condition
+For this patient, quickly, we see that under an encounter-level only approach we
+would never capture the miscellaneous condition (tech-dep or transplants) simply
+becuase the tech-dependent code never occurs along with a non-tech-dependent
+code --- Just like the POA issue from the prior example.
 
-* Metabolic is simple: DxPr from ecounter 4 and on with couple missing
-  encounters
-  * a flag carried forward would be sufficient
+For respiratory, we have the data loss due to tech codes not
+being carried forward on the encounter-level only resulting in either missing
+the condition completely (encounters 4, and 5) or missclassifying the condition
+(encounters 6 through 13)
 
-* Respiratory:
-  * tech dep on encounter 1 - only code so _no flag_
-  * Nothing reported on encounter 2 or 3
-  * Flag on encounter 4 as Tech becuase of the Metabolic condition
-    * only works for the longitudinal approach as the code is not repeated
-
-* Miscellaneous is similar to the respiratory condition
-
-* IMPORTANT: the risk profile for this patient is very different beween the two
-  methods for flagging comorbidities.
+The risk profile for this subject is very different depending on whether or not
+we consider the whole patient history when flagging comorbidities.
 
 :::
 
@@ -823,18 +872,25 @@ DT1 |>
   comorbidities in longitudinal data
 
 ::: {.notes}
-* Move on by
+
+So, that is the central point of this talk:
+
+Encounter-level flagging is not enough.
+
+It can undercount chronic conditions, misclassify severity, and fail entirely
+for algorithms that depend on historical context or present-on-admission logic.
+
+That is what `medicalcoder` is designed to address.
+
 :::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
 
 ::: {.notes}
-* Move on by
-* A single function call provides access to all the comorbidity methods
-* three groups of inputs:
-  * required inputs
-  * optionals inputs
-  * defaults
+
+From a user perspective, the package provides a unified interface --- Just one
+function call.  `medicalcoder::comorbidities()`.
+
 :::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
@@ -848,15 +904,14 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
-* Move on by
-* data should be in a "long" format, one ICD code per row.   Optional columns
-  for subject/encounter ids.  A data.frame is required.  data.tables and tibbles
-  are recommended for performance
+You are required to supply three items:
 
-* icd.codes is a character string telling the software the name of the column in
-  data containing the ICD codes
+1. a data.frame, in a long format, one ICD-code per row
+2. Specify which column in the data.frame contains the ICD codes
+3. Specify the method, a comorbidity family and variant 
+   * eg charlson_quan2005, charlson_quan2011, elixhauser_ahrq2026, pccc_v3.1, ...
+   * Currently 17 options.
 
-* method: the family (Charlson, Elixhauser, PCCC) and the variant
 :::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
@@ -868,7 +923,7 @@ medicalcoder::comorbidities(
   icd.codes = ,   # character; name of column in data containing ICD codes
   method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
 
-  ### Optional inputs controlling grouping and code attributes:
+  ### Optional inputs controlling grouping and ICD code attributes:
   id.vars   = NULL,  # character; subject, encounter identifiers
   icdv.var  = NULL,  # character; column name for ICD version (9 or 10)
   icdv      = NULL,  # integer; constant ICD version for all rows
@@ -882,17 +937,22 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
-* Move on by
-* Optional inputs are extremly useful
 
-  * id.vars a character vector of columns in data
-    * Important: the last id is used for sorting when using the longitudinal
-      aware flagging
+Optionally, but strongly encouraged,
 
-  * icdv.var; icdv and other pairs of inputs: the .var is the name of a column
-    in data denoting the ICD version, diag/proc code, POA...  without the .var
-    is quick way to tell medicalcoder that all the data is of a particular
-    version, type, etc.
+You can also provide identifiers such as subject ID and encounter ID so the
+package can evaluate records longitudinally in the proper order. 
+
+For ICD version handling, you can either point to a variable in the data that
+distinguishes ICD-9 from ICD-10 (icdv.var), or specify a constant if your
+dataset uses only one version.  
+
+That means the same interface works for mixed-version datasets as well as
+simpler single-version cases.
+
+Similar input paradigm for diagnostic/procedure codes, present-on-admission
+(poa) flags, and primary diagnosis flags.
+
 :::
 
 ## `medicalcoder::comorbidities()` {auto-animate=true}
@@ -904,7 +964,7 @@ medicalcoder::comorbidities(
   icd.codes = ,   # character; name of column in data containing ICD codes
   method    = ,   # <family>_<variant>, e.g., "charlson_quan2005"
 
-  ### Optional inputs controlling grouping and code attributes:
+  ### Optional inputs controlling grouping and ICD code attributes:
   id.vars   = NULL,  # character; subject, encounter identifiers
   icdv.var  = NULL,  # character; column name for ICD version (9 or 10)
   icdv      = NULL,  # integer; constant ICD version for all rows
@@ -925,20 +985,10 @@ medicalcoder::comorbidities(
 ```
 
 ::: {.notes}
-* Move on by
-* flag.method:
 
-  * "current" is the "encounter-level" what it really means is aggreate within the
-    uniuque id.vars, if id.vars or omitted then the whole of data is treated as
-    one encounter for one subject
-
-  * "cumulative" requires at least two id.vars and will flag within the unique
-    sets of id.vars while sorting by the last id.var for longitudinal support,
-
-  * data base style matching (regex is common in other implementations)
-    on full and/or compact codes
-
-  * subconditions are only relevant to PCCC
+There are also defaults that control whether flagging is done at the current
+encounter only or longitudinally, whether full or compact code formats are used,
+and whether subconditions are retained where applicable.
 
 :::
 
@@ -951,11 +1001,24 @@ medicalcoder::comorbidities(
     * all observed differences have been false negatives from the other packages.
   * It's not a black box
     * All source materials and code are open for review:
-    * https://github.com/dewittpe/medicalcoder/
+    * [https://github.com/dewittpe/medicalcoder/](https://github.com/dewittpe/medicalcoder/)
 
 ::: {.notes}
-* Move on by
-* Testing is part of the package source code
+
+Why should you trust the results?
+
+First, the package is not a black box. The source code, internal mappings, and
+algorithmic details are available on GitHub.
+
+Second, I have validated the implementation against external references,
+including code distributed with MIMIC, SAS code from AHRQ, and several other R
+packages. 
+
+During development I tracked down discrepancies, identified false
+positives and false negatives, and corrected those issues. At this point I am
+confident in the implementation and in the value of the longitudinal framework
+it provides.
+
 :::
 
 ## Depends on R &geq; 3.5.0, No Imports
@@ -972,9 +1035,11 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 * All you need is a `medicalcoder_<version>.tar.gz` file and R &geq; 3.5.0
 
 ::: {.notes}
-* Move on by
-* Tested against all versions of R 3.5.0 and newer without suggested packages
-* Tested against all versions of R 4.1.0 and newer with suggested packages
+
+Installation is straightforward. The package works with R 3.5 or newer. Packages
+such as `data.table` and `dplyr` are suggested for performance, but the dependency
+footprint is intentionally light.
+
 :::
 
 ## Takeaway
@@ -997,9 +1062,19 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
   medical data.
 
 ::: {.notes}
-* Move on by
+So to close, here are the takeaways.
 
-* One API...
+Encounter-level comorbidity flagging is insufficient for many real analyses.
+
+We need to account for the longitudinal nature of medical data.
+
+A simple carry-forward of encounter-level flags is not enough in the more
+complex cases.
+
+`medicalcoder` provides a lightweight, unified R interface for applying
+comorbidity algorithms while accounting for ICD version, code type,
+present-on-admission status, primary diagnosis, full versus compact codes, and
+patient history over time.
 :::
 
 ## Thanks and Links
@@ -1022,15 +1097,23 @@ installed.packages()["medicalcoder", c("Depends", "Imports", "Suggests")]
 :::
 ::::
 
-|                 |       |
-|:--              |:----- |
+|                 |         |
+|:-               |:------- |
 | CRAN            | [https://cran.r-project.org/package=medicalcoder](https://cran.r-project.org/package=medicalcoder) |
 | GitHub          | [https://github.com/dewittpe/medicalcoder](https://github.com/dewittpe/medicalcoder) |
-| Package Website | [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/) |
-| These slides    | [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026) |
+| Package<br>Website | [http://www.peteredewitt.com/medicalcoder/](http://www.peteredewitt.com/medicalcoder/) |
+| Slides          | [https://github.com/dewittpe/medicalcoder-R-medicine-2026](https://github.com/dewittpe/medicalcoder-R-medicine-2026) |
 
 ::: {.notes}
-* Move on by
+
+Thank you for your time.
+
+I would also like to acknowledge the people who supported and contributed to
+this work: Seth Russell, Meg Rebull, James Feinstein, and Tell Bennett.
+
+The package site, CRAN page, GitHub repository, and slides are all linked in the
+materials for this talk.
+
 :::
 
 # Appendix
